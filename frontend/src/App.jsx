@@ -284,7 +284,7 @@ function App() {
 
     const loadSuppliers = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/suppliers');
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/suppliers');
             const result = await response.json();
 
             if (response.ok) {
@@ -301,7 +301,7 @@ function App() {
         event.preventDefault();
 
         try {
-            const response = await fetch('http://localhost:5000/api/suppliers', {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/suppliers', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -342,7 +342,7 @@ function App() {
 
         try {
             const response = await fetch(
-                `http://localhost:5000/api/suppliers/${editingSupplier.supplier_id}`,
+                `https://batloung-farm-backend.onrender.com/api/suppliers/${editingSupplier.supplier_id}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -371,7 +371,7 @@ function App() {
     const deleteSupplier = async () => {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/suppliers/${deletingSupplier.supplier_id}`,
+                `https://batloung-farm-backend.onrender.com/api/suppliers/${deletingSupplier.supplier_id}`,
                 {
                     method: 'DELETE'
                 }
@@ -395,7 +395,7 @@ function App() {
 
     const loadFruits = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/fruits');
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/fruits');
             const result = await response.json();
 
             if (response.ok) {
@@ -410,7 +410,7 @@ function App() {
 
     const loadStock = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/fruits/stock');
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/fruits/stock');
             const result = await response.json();
 
             if (response.ok) {
@@ -426,9 +426,9 @@ function App() {
     const loadReports = async () => {
         try {
             const [fruitsResponse, vendorResponse, stockResponse] = await Promise.all([
-                fetch('http://localhost:5000/api/reports/top-fruits'),
-                fetch('http://localhost:5000/api/reports/top-vendor'),
-                fetch('http://localhost:5000/api/reports/stock')
+                fetch('https://batloung-farm-backend.onrender.com/api/reports/top-fruits'),
+                fetch('https://batloung-farm-backend.onrender.com/api/reports/top-vendor'),
+                fetch('https://batloung-farm-backend.onrender.com/api/reports/stock')
             ]);
 
             const [fruitsResult, vendorResult, stockResult] = await Promise.all([
@@ -469,7 +469,7 @@ function App() {
 
         try {
             const response = await fetch(
-                `http://localhost:5000/api/reports/revenue?start_date=${startDate}&end_date=${endDate}`
+                `https://batloung-farm-backend.onrender.com/api/reports/revenue?start_date=${startDate}&end_date=${endDate}`
             );
             const result = await response.json();
 
@@ -488,7 +488,7 @@ function App() {
         event.preventDefault();
 
         try {
-            const response = await fetch('http://localhost:5000/api/fruits', {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/fruits', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -530,7 +530,7 @@ function App() {
 
         try {
             const response = await fetch(
-                `http://localhost:5000/api/fruits/${editingFruit.fruit_id}`,
+                `https://batloung-farm-backend.onrender.com/api/fruits/${editingFruit.fruit_id}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -559,7 +559,7 @@ function App() {
     const deleteFruit = async () => {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/fruits/${deletingFruit.fruit_id}`,
+                `https://batloung-farm-backend.onrender.com/api/fruits/${deletingFruit.fruit_id}`,
                 {
                     method: 'DELETE'
                 }
@@ -584,8 +584,8 @@ function App() {
     const loadVendors = async (term = '') => {
         try {
             const url = term.trim()
-                ? `http://localhost:5000/api/vendors/search?term=${encodeURIComponent(term)}`
-                : 'http://localhost:5000/api/vendors';
+                ? `https://batloung-farm-backend.onrender.com/api/vendors/search?term=${encodeURIComponent(term)}`
+                : 'https://batloung-farm-backend.onrender.com/api/vendors';
 
             const response = await fetch(url);
             const result = await response.json();
@@ -604,7 +604,7 @@ function App() {
         event.preventDefault();
 
         try {
-            const response = await fetch('http://localhost:5000/api/vendors', {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/vendors', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -647,7 +647,7 @@ function App() {
 
         try {
             const response = await fetch(
-                `http://localhost:5000/api/vendors/${editingVendor.vendor_id}`,
+                `https://batloung-farm-backend.onrender.com/api/vendors/${editingVendor.vendor_id}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -702,7 +702,7 @@ function App() {
                 }))
             };
 
-            const response = await fetch('http://localhost:5000/api/purchases', {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/purchases', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -771,7 +771,7 @@ function App() {
                 }))
             };
 
-            const response = await fetch('http://localhost:5000/api/sales', {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/sales', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
