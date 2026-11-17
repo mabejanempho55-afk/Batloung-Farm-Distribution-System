@@ -2,6 +2,9 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 require('dotenv').config();
+console.log('TiDB host:', process.env.DB_HOST || 'MISSING');
+console.log('Database name:', process.env.DB_NAME || 'MISSING');
+console.log('Database user configured:', !!process.env.DB_USER);
 
 const isTiDB = process.env.DB_HOST &&
     process.env.DB_HOST.includes('tidbcloud.com');
