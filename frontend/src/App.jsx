@@ -1057,6 +1057,7 @@ function App() {
                                         <th>Phone Number</th>
                                         <th>Location</th>
                                         <th>Registration Date</th>
+                                        <th>Outstanding Balance</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -1069,6 +1070,7 @@ function App() {
                                             <td>{vendor.phone_number}</td>
                                             <td>{vendor.location}</td>
                                             <td>{vendor.registration_date ? String(vendor.registration_date).slice(0, 10) : ''}</td>
+                                            <td>M{Number(vendor.outstanding_balance || 0).toFixed(2)}</td>
                                             <td>
                                                 <button
                                                     className="add-button"
@@ -1082,7 +1084,7 @@ function App() {
 
                                     {vendors.length === 0 && (
                                         <tr>
-                                            <td colSpan="6">No vendors found.</td>
+                                            <td colSpan="7">No vendors found.</td>
                                         </tr>
                                     )}
                                 </tbody>
