@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import './App.css';
 import Modal from './Modal';
@@ -51,6 +50,18 @@ function App() {
         ]
     });
     const [lastSale, setLastSale] = useState(null);
+    const [orders, setOrders] = useState([]);
+const [showOrderModal, setShowOrderModal] = useState(false);
+const [orderForm, setOrderForm] = useState({
+    vendor_id: '',
+    items: [
+        {
+            fruit_id: '',
+            packaging_size: 'Small',
+            quantity: ''
+        }
+    ]
+});
     const [stock, setStock] = useState([]);
 
     const [topFruits, setTopFruits] = useState([]);
@@ -91,6 +102,7 @@ function App() {
         'Vendors',
         'Purchases',
         'Sales',
+        'Orders',
         'Stock',
         'Reports'
     ];
@@ -405,6 +417,123 @@ function App() {
             }
         } catch (error) {
             alert('Could not connect to the server.');
+        }
+    };
+
+    const resetOrderForm = () => {
+        setOrderForm({
+            vendor_id: '',
+            items: [{ fruit_id: '', packaging_size: 'Small', quantity: '' }]
+        });
+    };
+
+    const loadOrders = async () => {
+        try {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/orders');
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(result.message || 'Could not load orders.');
+                return;
+            }
+
+            setOrders(Array.isArray(result.data) ? result.data : []);
+        } catch (error) {
+            alert('Could not connect to the server while loading orders.');
+        }
+    };
+
+    const handleOrderItemChange = (index, event) => {
+        const updatedItems = [...orderForm.items];
+        updatedItems[index] = {
+            ...updatedItems[index],
+            [event.target.name]: event.target.value
+        };
+        setOrderForm({ ...orderForm, items: updatedItems });
+    };
+
+    const addOrderItem = () => {
+        setOrderForm({
+            ...orderForm,
+            items: [...orderForm.items, { fruit_id: '', packaging_size: 'Small', quantity: '' }]
+        });
+    };
+
+    const removeOrderItem = (index) => {
+        if (orderForm.items.length === 1) {
+            alert('An order must contain at least one item.');
+            return;
+        }
+        setOrderForm({
+            ...orderForm,
+            items: orderForm.items.filter((item, itemIndex) => itemIndex !== index)
+        });
+    };
+
+    const addOrder = async (event) => {
+        event.preventDefault();
+
+        if (!orderForm.vendor_id) {
+            alert('Please select a vendor.');
+            return;
+        }
+
+        const validItems = orderForm.items.every((item) =>
+            item.fruit_id && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0
+        );
+
+        if (!validItems) {
+            alert('Please select a fruit and enter a quantity greater than zero for every item.');
+            return;
+        }
+
+        try {
+            const response = await fetch('https://batloung-farm-backend.onrender.com/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vendor_id: Number(orderForm.vendor_id),
+                    items: orderForm.items.map((item) => ({
+                        fruit_id: Number(item.fruit_id),
+                        packaging_size: item.packaging_size,
+                        quantity: Number(item.quantity)
+                    }))
+                })
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(result.message || 'Could not create the order.');
+                return;
+            }
+
+            alert('Order created successfully.');
+            resetOrderForm();
+            setShowOrderModal(false);
+            loadOrders();
+        } catch (error) {
+            alert('Could not connect to the server while creating the order.');
+        }
+    };
+
+    const updateOrderStatus = async (orderId, orderStatus) => {
+        try {
+            const response = await fetch(`https://batloung-farm-backend.onrender.com/api/orders/${orderId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_status: orderStatus })
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(result.message || 'Could not update the order status.');
+                loadOrders();
+                return;
+            }
+
+            loadOrders();
+        } catch (error) {
+            alert('Could not connect to the server while updating the order.');
         }
     };
 
@@ -819,6 +948,11 @@ function App() {
                                 if (tab === 'Suppliers') loadSuppliers();
                                 if (tab === 'Fruits') loadFruits();
                                 if (tab === 'Stock') loadStock();
+                                if (tab === 'Orders') {
+                                    loadOrders();
+                                    loadVendors();
+                                    loadFruits();
+                                }
                                 if (tab === 'Reports') loadReports();
 
                                 if (tab === 'Vendors') {
@@ -1146,6 +1280,63 @@ function App() {
                                     <p>Payment Status: {lastSale.payment_status}</p>
                                 </div>
                             )}
+                        </>
+                    )}
+
+                    {activeTab === 'Orders' && (
+                        <>
+                            <p>Create vendor orders and track their progress from Pending to Completed.</p>
+                            <button
+                                className="add-button"
+                                onClick={() => {
+                                    resetOrderForm();
+                                    loadVendors();
+                                    loadFruits();
+                                    setShowOrderModal(true);
+                                }}
+                            >
+                                + Create Order
+                            </button>
+                            <button className="add-button" onClick={loadOrders} style={{ marginLeft: '10px' }}>
+                                Refresh Orders
+                            </button>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Vendor</th>
+                                        <th>Order Date</th>
+                                        <th>Total Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.map((order) => (
+                                        <tr key={order.order_id}>
+                                            <td>#{order.order_id}</td>
+                                            <td>{order.vendor_name || order.vendor || `Vendor #${order.vendor_id}`}</td>
+                                            <td>{order.order_date ? new Date(order.order_date).toLocaleDateString() : '—'}</td>
+                                            <td>M{Number(order.total_amount || 0).toFixed(2)}</td>
+                                            <td>
+                                                <select
+                                                    value={order.order_status || 'Pending'}
+                                                    onChange={(event) => updateOrderStatus(order.order_id, event.target.value)}
+                                                >
+                                                    <option value="Pending">Pending</option>
+                                                    <option value="Confirmed">Confirmed</option>
+                                                    <option value="Processing">Processing</option>
+                                                    <option value="Ready for Collection/Delivery">Ready for Collection/Delivery</option>
+                                                    <option value="Completed">Completed</option>
+                                                    <option value="Cancelled">Cancelled</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {orders.length === 0 && (
+                                        <tr><td colSpan="5">No orders found.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </>
                     )}
 
@@ -1658,6 +1849,50 @@ function App() {
                         >
                             Cancel
                         </button>
+                    </form>
+                </Modal>
+            )}
+
+            {showOrderModal && (
+                <Modal title="Create New Order" onClose={() => setShowOrderModal(false)}>
+                    <form onSubmit={addOrder}>
+                        <label>Select Vendor</label>
+                        <select
+                            value={orderForm.vendor_id}
+                            onChange={(event) => setOrderForm({ ...orderForm, vendor_id: event.target.value })}
+                            required
+                        >
+                            <option value="">Choose a vendor</option>
+                            {vendors.map((vendor) => (
+                                <option key={vendor.vendor_id} value={vendor.vendor_id}>{vendor.vendor_name}</option>
+                            ))}
+                        </select>
+
+                        <h3>Order Items</h3>
+                        {orderForm.items.map((item, index) => (
+                            <div key={index} style={{ border: '1px solid #DED3EB', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
+                                <h4>Item {index + 1}</h4>
+                                <label>Fruit</label>
+                                <select name="fruit_id" value={item.fruit_id} onChange={(event) => handleOrderItemChange(index, event)} required>
+                                    <option value="">Select Fruit</option>
+                                    {fruits.filter((fruit) => fruit.status === 'Available').map((fruit) => (
+                                        <option key={fruit.fruit_id} value={fruit.fruit_id}>{fruit.fruit_name}</option>
+                                    ))}
+                                </select>
+                                <label>Box Size</label>
+                                <select name="packaging_size" value={item.packaging_size} onChange={(event) => handleOrderItemChange(index, event)} required>
+                                    <option value="Small">Small</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Large">Large</option>
+                                </select>
+                                <label>Quantity</label>
+                                <input type="number" name="quantity" min="1" step="1" value={item.quantity} onChange={(event) => handleOrderItemChange(index, event)} required />
+                                <button type="button" className="cancel-button" onClick={() => removeOrderItem(index)}>Remove Item</button>
+                            </div>
+                        ))}
+                        <button type="button" className="add-button" onClick={addOrderItem}>+ Add Another Fruit</button>
+                        <button type="submit">Save Order</button>
+                        <button type="button" className="cancel-button" onClick={() => setShowOrderModal(false)}>Cancel</button>
                     </form>
                 </Modal>
             )}

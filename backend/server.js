@@ -10,6 +10,7 @@ const vendorRoutes = require('./routes/vendorRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 app.use(cors());
@@ -20,6 +21,7 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).json({
