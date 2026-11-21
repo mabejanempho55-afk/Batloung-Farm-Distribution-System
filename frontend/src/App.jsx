@@ -51,8 +51,8 @@ function App() {
     });
     const [lastSale, setLastSale] = useState(null);
     const [orders, setOrders] = useState([]);
-const [showOrderModal, setShowOrderModal] = useState(false);
-const [orderForm, setOrderForm] = useState({
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [orderForm, setOrderForm] = useState({
     vendor_id: '',
     items: [
         {
@@ -70,6 +70,12 @@ const [orderForm, setOrderForm] = useState({
     const [reportStock, setReportStock] = useState([]);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [salesByBoxSize, setSalesByBoxSize] = useState([]);
+    const [salesByStreetVendor, setSalesByStreetVendor] = useState([]);
+    const [purchasesByProvince, setPurchasesByProvince] = useState([]);
+    const [pendingOrders, setPendingOrders] = useState([]);
+    const [completedOrders, setCompletedOrders] = useState([]);
+    const [totalSalesByDate, setTotalSalesByDate] = useState([]);
 
     const [form, setForm] = useState({
         business_name: '',
@@ -553,35 +559,54 @@ const [orderForm, setOrderForm] = useState({
     };
 
     const loadReports = async () => {
-        try {
-            const [fruitsResponse, vendorResponse, stockResponse] = await Promise.all([
-                fetch('https://batloung-farm-backend.onrender.com/api/reports/top-fruits'),
-                fetch('https://batloung-farm-backend.onrender.com/api/reports/top-vendor'),
-                fetch('https://batloung-farm-backend.onrender.com/api/reports/stock')
-            ]);
+    try {
+        const baseUrl = 'https://batloung-farm-backend.onrender.com/api/reports';
 
-            const [fruitsResult, vendorResult, stockResult] = await Promise.all([
-                fruitsResponse.json(),
-                vendorResponse.json(),
-                stockResponse.json()
-            ]);
+        const endpoints = [
+            'top-fruits',
+            'top-vendor',
+            'stock',
+            'sales-by-box-size',
+            'sales-by-street-vendor',
+            'purchases-by-province',
+            'pending-orders',
+            'completed-orders',
+            'total-sales-by-date'
+        ];
 
-            if (!fruitsResponse.ok || !vendorResponse.ok || !stockResponse.ok) {
-                alert('Could not load all reports. Please check that the backend server is running.');
-                return;
-            }
+        const responses = await Promise.all(
+            endpoints.map((endpoint) => fetch(`${baseUrl}/${endpoint}`))
+        );
 
-            setTopFruits(Array.isArray(fruitsResult.data) ? fruitsResult.data : []);
-            setTopVendor(
-                Array.isArray(vendorResult.data)
-                    ? vendorResult.data[0] || null
-                    : vendorResult.data || null
-            );
-            setReportStock(Array.isArray(stockResult.data) ? stockResult.data : []);
-        } catch (error) {
-            alert('Could not connect to the server.');
+        const results = await Promise.all(
+            responses.map((response) => response.json())
+        );
+
+        if (responses.some((response) => !response.ok)) {
+            alert('Could not load all reports. Please check the backend server.');
+            return;
         }
-    };
+
+        setTopFruits(Array.isArray(results[0].data) ? results[0].data : []);
+
+        setTopVendor(
+            Array.isArray(results[1].data)
+                ? results[1].data[0] || null
+                : results[1].data || null
+        );
+
+        setReportStock(Array.isArray(results[2].data) ? results[2].data : []);
+        setSalesByBoxSize(Array.isArray(results[3].data) ? results[3].data : []);
+        setSalesByStreetVendor(Array.isArray(results[4].data) ? results[4].data : []);
+        setPurchasesByProvince(Array.isArray(results[5].data) ? results[5].data : []);
+        setPendingOrders(Array.isArray(results[6].data) ? results[6].data : []);
+        setCompletedOrders(Array.isArray(results[7].data) ? results[7].data : []);
+        setTotalSalesByDate(Array.isArray(results[8].data) ? results[8].data : []);
+
+    } catch (error) {
+        alert('Could not connect to the server while loading reports.');
+    }
+};
 
     const generateRevenueReport = async (event) => {
         event.preventDefault();
@@ -1383,151 +1408,291 @@ const [orderForm, setOrderForm] = useState({
                     )}
 
                     {activeTab === 'Reports' && (
-                        <>
-                            <p>View sales performance, revenue, vendor activity and current stock reports.</p>
+    <>
+        <p>View sales performance, revenue, vendor activity, purchases, orders and current stock reports.</p>
 
-                            <button className="add-button" onClick={loadReports}>
-                                Refresh Reports
-                            </button>
+        <button className="add-button" onClick={loadReports}>
+            Refresh Reports
+        </button>
 
-                            <div className="dashboard-card">
-                                <h3>Top 5 Fruits Sold</h3>
-
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Fruit</th>
-                                            <th>Boxes Sold</th>
-                                            <th>Total Revenue</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {topFruits.map((item, index) => (
-                                            <tr key={item.fruit_id || item.fruit_name || index}>
-                                                <td>{item.fruit_name}</td>
-                                                <td>{item.total_boxes ?? item.boxes_sold ?? item.total_quantity ?? 0}</td>
-                                                <td>M{Number(item.total_revenue ?? item.revenue ?? 0).toFixed(2)}</td>
-                                            </tr>
-                                        ))}
-
-                                        {topFruits.length === 0 && (
-                                            <tr>
-                                                <td colSpan="3">No fruit sales report available.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="dashboard-card" style={{ marginTop: '20px' }}>
-                                <h3>Revenue Report</h3>
-                                <p>Select a date range to calculate total sales revenue.</p>
-
-                                <form
-                                    onSubmit={generateRevenueReport}
-                                    style={{
-                                        display: 'flex',
-                                        gap: '12px',
-                                        flexWrap: 'wrap',
-                                        alignItems: 'end'
-                                    }}
-                                >
-                                    <div>
-                                        <label>Start Date</label>
-                                        <input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(event) => setStartDate(event.target.value)}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label>End Date</label>
-                                        <input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(event) => setEndDate(event.target.value)}
-                                            required
-                                        />
-                                    </div>
-
-                                    <button type="submit" className="add-button">
-                                        Generate Revenue
-                                    </button>
-                                </form>
-
-                                {revenueReport && (
-                                    <div style={{ marginTop: '15px' }}>
-                                        <h3>
-                                            Total Revenue: M{Number(
-                                                revenueReport.total_revenue ??
-                                                revenueReport.totalRevenue ??
-                                                revenueReport.revenue ??
-                                                revenueReport.total_sales ??
-                                                revenueReport.data?.total_revenue ??
-                                                revenueReport.data?.totalRevenue ??
-                                                0
-                                            ).toFixed(2)}
-                                        </h3>
-                                        <p>Period: {startDate} to {endDate}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="dashboard-card" style={{ marginTop: '20px' }}>
-                                <h3>Top Vendor</h3>
-
-                                {topVendor ? (
-                                    <>
-                                        <p>Vendor: {topVendor.vendor_name || topVendor.name || 'Not available'}</p>
-                                        <p>Vendor ID: {topVendor.vendor_id ?? 'Not available'}</p>
-                                        <p>
-                                            Total Boxes Purchased: {
-                                                topVendor.total_boxes ??
-                                                topVendor.boxes_purchased ??
-                                                topVendor.total_quantity ??
-                                                0
-                                            }
-                                        </p>
-                                    </>
-                                ) : (
-                                    <p>No vendor report available.</p>
-                                )}
-                            </div>
-
-                            <div className="dashboard-card" style={{ marginTop: '20px' }}>
-                                <h3>Current Stock Report</h3>
-
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Fruit</th>
-                                            <th>Packaging Size</th>
-                                            <th>Available Quantity</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {reportStock.map((item, index) => (
-                                            <tr key={`${item.fruit_id}-${item.packaging_size}-${index}`}>
-                                                <td>{item.fruit_name}</td>
-                                                <td>{item.packaging_size}</td>
-                                                <td>{item.available_quantity}</td>
-                                            </tr>
-                                        ))}
-
-                                        {reportStock.length === 0 && (
-                                            <tr>
-                                                <td colSpan="3">No stock report available.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </>
+        <div className="dashboard-card">
+            <h3>Top 5 Fruits Sold</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fruit</th>
+                        <th>Boxes Sold</th>
+                        <th>Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {topFruits.map((item, index) => (
+                        <tr key={item.fruit_id || item.fruit_name || index}>
+                            <td>{item.fruit_name}</td>
+                            <td>{item.total_boxes ?? item.boxes_sold ?? item.total_quantity ?? 0}</td>
+                            <td>M{Number(item.total_revenue ?? item.revenue ?? 0).toFixed(2)}</td>
+                        </tr>
+                    ))}
+                    {topFruits.length === 0 && (
+                        <tr><td colSpan="3">No fruit sales report available.</td></tr>
                     )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Revenue Report</h3>
+            <p>Select a date range to calculate total sales revenue.</p>
+
+            <form
+                onSubmit={generateRevenueReport}
+                style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'end' }}
+            >
+                <div>
+                    <label>Start Date</label>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(event) => setStartDate(event.target.value)}
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label>End Date</label>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(event) => setEndDate(event.target.value)}
+                        required
+                    />
+                </div>
+
+                <button type="submit" className="add-button">
+                    Generate Revenue
+                </button>
+            </form>
+
+            {revenueReport && (
+                <div style={{ marginTop: '15px' }}>
+                    <h3>
+                        Total Revenue: M{Number(
+                            revenueReport.total_revenue ??
+                            revenueReport.totalRevenue ??
+                            revenueReport.revenue ??
+                            revenueReport.total_sales ??
+                            revenueReport.data?.total_revenue ??
+                            revenueReport.data?.totalRevenue ??
+                            0
+                        ).toFixed(2)}
+                    </h3>
+                    <p>Period: {startDate} to {endDate}</p>
+                </div>
+            )}
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Top Vendor</h3>
+            {topVendor ? (
+                <>
+                    <p>Vendor: {topVendor.vendor_name || topVendor.name || 'Not available'}</p>
+                    <p>Vendor ID: {topVendor.vendor_id ?? 'Not available'}</p>
+                    <p>
+                        Total Boxes Sold: {
+                            topVendor.total_boxes ??
+                            topVendor.boxes_purchased ??
+                            topVendor.total_quantity ??
+                            0
+                        }
+                    </p>
+                </>
+            ) : (
+                <p>No vendor report available.</p>
+            )}
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Current Stock Report</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fruit</th>
+                        <th>Packaging Size</th>
+                        <th>Available Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {reportStock.map((item, index) => (
+                        <tr key={`${item.fruit_id}-${item.packaging_size}-${index}`}>
+                            <td>{item.fruit_name}</td>
+                            <td>{item.packaging_size}</td>
+                            <td>{item.available_quantity}</td>
+                        </tr>
+                    ))}
+                    {reportStock.length === 0 && (
+                        <tr><td colSpan="3">No stock report available.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Sales by Box Size</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Box Size</th>
+                        <th>Boxes Sold</th>
+                        <th>Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {salesByBoxSize.map((item, index) => (
+                        <tr key={item.packaging_size || index}>
+                            <td>{item.packaging_size}</td>
+                            <td>{item.total_boxes}</td>
+                            <td>M{Number(item.total_revenue || 0).toFixed(2)}</td>
+                        </tr>
+                    ))}
+                    {salesByBoxSize.length === 0 && (
+                        <tr><td colSpan="3">No box size sales found.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Sales by Street Vendor</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Boxes Sold</th>
+                        <th>Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {salesByStreetVendor.map((item, index) => (
+                        <tr key={item.vendor_id || index}>
+                            <td>{item.vendor_name}</td>
+                            <td>{item.total_boxes}</td>
+                            <td>M{Number(item.total_revenue || 0).toFixed(2)}</td>
+                        </tr>
+                    ))}
+                    {salesByStreetVendor.length === 0 && (
+                        <tr><td colSpan="3">No vendor sales found.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Purchases by South African Province</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Province</th>
+                        <th>Total Purchases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {purchasesByProvince.map((item, index) => (
+                        <tr key={item.province || index}>
+                            <td>{item.province}</td>
+                            <td>M{Number(item.total_purchases || 0).toFixed(2)}</td>
+                        </tr>
+                    ))}
+                    {purchasesByProvince.length === 0 && (
+                        <tr><td colSpan="2">No province purchase records found.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Pending Orders</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Vendor</th>
+                        <th>Order Date</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {pendingOrders.map((item) => (
+                        <tr key={item.order_id}>
+                            <td>#{item.order_id}</td>
+                            <td>{item.vendor_name}</td>
+                            <td>{item.order_date ? new Date(item.order_date).toLocaleDateString() : '—'}</td>
+                            <td>M{Number(item.total_amount || 0).toFixed(2)}</td>
+                            <td>{item.order_status}</td>
+                        </tr>
+                    ))}
+                    {pendingOrders.length === 0 && (
+                        <tr><td colSpan="5">No pending orders found.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Completed Orders</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Vendor</th>
+                        <th>Order Date</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {completedOrders.map((item) => (
+                        <tr key={item.order_id}>
+                            <td>#{item.order_id}</td>
+                            <td>{item.vendor_name}</td>
+                            <td>{item.order_date ? new Date(item.order_date).toLocaleDateString() : '—'}</td>
+                            <td>M{Number(item.total_amount || 0).toFixed(2)}</td>
+                            <td>{item.order_status}</td>
+                        </tr>
+                    ))}
+                    {completedOrders.length === 0 && (
+                        <tr><td colSpan="5">No completed orders found.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="dashboard-card" style={{ marginTop: '20px' }}>
+            <h3>Total Sales by Date</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Number of Sales</th>
+                        <th>Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {totalSalesByDate.map((item, index) => (
+                        <tr key={item.sale_date || index}>
+                            <td>{item.sale_date ? new Date(item.sale_date).toLocaleDateString() : '—'}</td>
+                            <td>{item.total_sales}</td>
+                            <td>M{Number(item.total_revenue || 0).toFixed(2)}</td>
+                        </tr>
+                    ))}
+                    {totalSalesByDate.length === 0 && (
+                        <tr><td colSpan="3">No sales by date found.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </>
+)}
                 </main>
             </div>
 

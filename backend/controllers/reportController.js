@@ -81,10 +81,87 @@ const getCurrentStock = async (req, res, next) => {
         next(error);
     }
 };
+const getSalesByBoxSize = async (req, res, next) => {
+    try {
+        const data = await reportModel.getSalesByBoxSize();
 
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+const getSalesByStreetVendor = async (req, res, next) => {
+    try {
+        const data = await reportModel.getSalesByStreetVendor();
+
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+const getPurchasesByProvince = async (req, res, next) => {
+    try {
+        const data = await reportModel.getPurchasesByProvince();
+
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+const getPendingOrders = async (req, res, next) => {
+    try {
+        const data = await reportModel.getPendingOrders();
+
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+const getCompletedOrders = async (req, res, next) => {
+    try {
+        const data = await reportModel.getCompletedOrders();
+
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+const getTotalSalesByDate = async (req, res, next) => {
+    try {
+        const data = await reportModel.getTotalSalesByDate();
+
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 module.exports = {
     getTopFruits,
     getRevenueByDate,
     getTopVendor,
-    getCurrentStock
+    getCurrentStock,
+    getSalesByBoxSize,
+    getSalesByStreetVendor,
+    getPurchasesByProvince,
+    getPendingOrders,
+    getCompletedOrders,
+    getTotalSalesByDate
 };
